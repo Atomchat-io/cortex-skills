@@ -42,19 +42,44 @@ already had in front of it.
 **If the value should also be stored**, that is a separate decision: add it to passive collection at
 the End node. Passing a value and storing a value are unrelated. See `cortex-info-collection`.
 
-`{{handlebars}}` work in the URL, headers and body template.
+`{{handlebars}}` work in the **URL, headers and body template**.
 
-## `/{keyword}` is different
+## Client fields: two different syntaxes
 
-You can also interpolate a value the client **already has** on record:
+You can also inject a value the client **already has on record**. The syntax is **not the same
+everywhere**, and this is the most common thing to get wrong:
+
+| where | syntax | example |
+|---|---|---|
+| **URL** | `:field`, immediately after a `/` | `https://api.example.com/clientes/:documento` |
+| **Headers and body** | `/{field}` | `{"asesor": "/{asesor_asignado}"}` |
+
+Using `/{field}` in a URL does nothing — it is left in the request literally. Using `:field` in a
+header or body does nothing either. They are matched by different patterns.
+
+Two details on the URL form:
+
+- The `:field` must **follow a slash**. `?doc=:documento` is not substituted; `/doc/:documento` is.
+- Its value is **URL-encoded** automatically. `{{handlebars}}` in a URL is **not** — so a parameter
+  containing a space, `&` or `?` can break the request. Prefer `:field` for path segments when the
+  value is a stored field.
+
+### A missing field aborts the call
+
+This is the important difference from prompts. In a prompt, an absent `/{keyword}` renders a default
+and the conversation carries on. In an HTTP tool, **the request is not sent at all**:
 
 ```
-GET https://api.example.com/clientes/{{documento}}?asesor=/{asesor_asignado}
+This action was not executed: the required field(s) documento have no value.
 ```
 
-`/{keyword}` is read-only, resolved once when the conversation starts, and renders a **default** when
-the client has no value — it cannot signal absence. Use it for stable context, never for something
-gathered during this conversation. See `cortex-prompts`.
+The agent receives that message and continues the conversation. So a tool that quietly never runs is
+usually a field reference for a value the client does not have — check the `ToolCall` entry in the
+trace before assuming the endpoint is at fault.
+
+Every `:field` in the URL and every `/{field}` in the headers or body is checked this way, so a tool
+depending on five fields will not run until all five exist. That is a good reason to prefer
+`{{parameters}}`, which the model supplies from the conversation and which never block.
 
 ## Writing the description
 
@@ -105,8 +130,17 @@ Use it for values the business needs kept — a booking reference, an order numb
 | `auth.type` | `none`, `bearer`, `basic`, or `api-key` |
 | `successCodes` | Which statuses count as success; anything else surfaces as an error |
 | `timeoutSeconds` | 1–120. Lower it for anything that should fail fast. |
-| `headers` | Static headers; `{{params}}` and `/{keyword}` both interpolate |
-| `bodyTemplate` | Request body, with the same interpolation |
+| `headers` | `{{params}}` and `/{field}` both interpolate |
+| `bodyTemplate` | Same interpolation. **Only sent for non-GET methods** — a body on a GET is ignored. |
+
+The body is parsed as JSON after interpolation. If the result is valid JSON it is sent as JSON and
+`Content-Type: application/json` is added for you; if interpolation leaves it malformed, it is sent
+as a **raw string instead of failing**, which usually reaches the API as a confusing 400. When a
+tool returns an unexpected 400, check the interpolated body before the endpoint.
+
+Two guards you cannot switch off: only `http`/`https` URLs resolving to public hosts are allowed
+(private and loopback addresses are rejected), and a header value containing CR/LF is rejected as
+header injection. Both raise before the request is made.
 
 **Credentials are visible to anyone who can edit the Cortex.** Use a scoped service credential, never
 a personal token, and never one with more access than this single endpoint needs.
@@ -154,6 +188,12 @@ description is weak; called-and-ignored means the Conversation Goal is.
 - **"It got the data and ignored it."** Nothing told the agent what the response means.
 - **"Works in the test, not in a conversation."** The value you hardcoded as `testValues` isn't
   arriving as a parameter. Check the arguments on the `ToolCall` entry.
+- **"The tool silently never runs."** A `:field` or `/{field}` refers to a value this client does
+  not have, so the request was never sent. The trace carries the message naming the fields.
+- **"The field placeholder came through literally."** Wrong syntax for that position — `:field` in
+  the URL, `/{field}` in headers and body.
+- **"The URL is malformed at runtime."** A `{{parameter}}` in the URL is not URL-encoded. Use
+  `:field` for a stored value, or ensure the parameter is a clean path segment.
 - **"Nothing was saved."** The `targetField` keyword doesn't exist in the catalog.
 - **"The conversation carried on as if nothing failed."** By design — a tool error tells the agent
   to inform the user and continue, so a broken endpoint reads as a vague reply rather than an error.
