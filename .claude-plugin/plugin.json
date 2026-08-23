@@ -1,0 +1,23 @@
+{
+    "name": "cortex",
+    "description": "Build, inspect and test Atom Cortex conversational agents. Bundles the Cortex MCP server and the skills that teach how the product actually works.",
+    "version": "0.1.0",
+    "author": {
+        "name": "Atom"
+    },
+    "keywords": [
+        "atom",
+        "cortex",
+        "agent-builder",
+        "conversational-ai"
+    ],
+    "mcpServers": {
+        "cortex": {
+            "type": "http",
+            "url": "${CORTEX_MCP_URL}",
+            "headers": {
+                "x-cortex-key": "${CORTEX_MCP_KEY:-local}"
+            }
+        }
+    }
+}

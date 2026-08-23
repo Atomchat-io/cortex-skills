@@ -1,0 +1,14 @@
+{
+    "name": "atom",
+    "description": "Atom's Cortex plugin: skills and tools for building conversational agents.",
+    "owner": {
+        "name": "Atom"
+    },
+    "plugins": [
+        {
+            "name": "cortex",
+            "source": ".",
+            "description": "Build, inspect and test Atom Cortex conversational agents."
+        }
+    ]
+}
