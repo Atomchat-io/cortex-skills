@@ -1,6 +1,6 @@
 ---
 name: cortex-rag
-description: Give a Cortex agent knowledge — attaching files and dynamic tables, writing descriptions that make retrieval work, and why naming a document in a prompt does nothing. Use this whenever a Cortex needs to answer from documentation, policies, prices, stock or catalogs, and whenever a Cortex fails to answer something that is definitely in a document.
+description: Give a Cortex agent knowledge — attaching files and dynamic tables, how retrieval actually selects content, and why attaching more sources makes it worse. Use this whenever a Cortex needs to answer from documentation, policies, prices, stock or catalogs, and whenever a Cortex fails to answer something that is definitely in a document.
 ---
 
 # Knowledge: files and dynamic tables
@@ -51,30 +51,41 @@ list_catalog(companyId, kind: "dynamic_tables")
 Then write them onto the agent node with `update_agent`: `knowledgeBases` for files (an array),
 `dynamicTableId` for the table (**one per node**).
 
-Attach only what is relevant **at that point in the conversation**. A node carrying every document
-the company owns retrieves worse than one carrying the three that matter — more material to sift,
-and a slower node. If different parts of the conversation need different knowledge, that is a
-legitimate reason to split nodes. See `cortex-agent-building`.
+Attach only what is relevant **at that point in the conversation** — see the section below for why
+this matters more than it looks.
 
 Uploading files and creating dynamic tables happens in the Atom UI. These tools list and attach.
 
-## Descriptions do the work
+## Every attached source is searched, every time
 
-A source's **description** is what makes it findable. Write what it contains and what questions it
-answers:
+There is no selection step. When retrieval fires, **all files attached to the node are searched
+together** as one query, and the same for the dynamic table. Nothing picks between them.
+
+In particular, **the description does nothing at runtime.** It is metadata for the people building
+the Cortex — the engine never reads it, and the model never sees it. Matching is vector similarity
+against the **content** of the documents, and nothing else.
+
+Two numbers govern the result, and they explain most retrieval complaints:
 
 | | |
 |---|---|
-| ✅ | `Política de cancelación y reembolsos: plazos de aviso, penalizaciones y cómo se devuelve el dinero.` |
-| ✅ | `Catálogo de productos con precio, stock disponible y tiempo de entrega por referencia.` |
-| ❌ | `Documento de políticas` — matches almost nothing |
-| ❌ | `Info` — matches everything, so it is retrieved for unrelated questions |
+| **4** | chunks returned in total, across *all* attached files combined |
+| **0.2** | minimum similarity — weaker matches are dropped entirely |
 
-Both failure directions are real. Too vague and it never surfaces; too broad and it crowds out the
-source that actually had the answer.
+So attaching more documents does not broaden coverage — **it dilutes it.** Four chunks are split
+across everything attached, so a node carrying ten documents can return nothing useful from the one
+that had the answer, because chunks from the other nine scored marginally higher.
 
-If a Cortex retrieves the wrong document, the fix is nearly always in the descriptions rather than
-the files.
+This is the real reason to attach only what is relevant at that point in the conversation, and a
+strong reason to split nodes when different parts of the conversation need different knowledge. See
+`cortex-agent-building`.
+
+It also means the fix for bad retrieval is almost never metadata:
+
+- **Fewer sources on the node** — the highest-leverage change
+- **Better content** — the document itself has to contain the answer in findable prose. A price
+  buried in a scanned table will not match; the same price in a sentence will.
+- **A dynamic table instead of a document**, when the answer is a row rather than a passage
 
 ## What the agent reads directly
 
@@ -102,8 +113,8 @@ Three outcomes, three different fixes:
 | what you see | meaning | fix |
 |---|---|---|
 | No log entry | Retrieval never ran for that message | Nothing attached, or the question did not read as one needing lookup |
-| Entry, nothing useful retrieved | It searched and missed | Description too vague, or the content is not really there |
-| Entry, wrong source retrieved | Descriptions overlap | Sharpen them, or attach fewer |
+| Entry, nothing useful retrieved | It searched and missed | The answer is not in the content in findable prose, or the 4 available chunks went to other attached sources |
+| Entry, wrong source retrieved | Another source scored higher | Attach fewer sources to this node |
 
 Ask the question several different ways. A source that only surfaces for one exact phrasing will
 fail for real customers.
@@ -111,11 +122,14 @@ fail for real customers.
 ## When something looks wrong
 
 - **"It doesn't know something that's in the document."** Check the trace first — no
-  `KnowledgeBaseSearch` is a completely different problem from a search that found nothing.
+  `KnowledgeBaseSearch` is a completely different problem from a search that found nothing. If it
+  did search, the usual cause is dilution: only 4 chunks come back across every attached source.
 - **"It gives stale prices."** Dynamic tables refresh on a schedule. Check when it last ran, and
   whether that data should be a table rather than a file.
-- **"It ignores the file I named in the prompt."** Prompts cannot direct retrieval. Attach the file.
-- **"It answers from the wrong document."** Too many sources attached, or two descriptions overlap.
+- **"It ignores the file I named in the prompt."** Prompts cannot direct retrieval, and neither can
+  descriptions. Attach the file to the node.
+- **"It answers from the wrong document."** Too many sources on the node — they compete for the
+  same 4 chunks.
 - **"It can't read the PDF the customer sent."** Correct — that is not supported. Retrieval only
   covers files uploaded to the knowledge base.
 

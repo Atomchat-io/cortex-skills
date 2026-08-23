@@ -58,17 +58,52 @@ the same node. See `cortex-agent-building`.
 
 ### 2. Passive collection — at the End node
 
-When the conversation ends, an analysis pass reads the whole conversation and records the general
-fields, the Stage, the Typification and the Tags together.
+When the conversation ends, **one LLM call reads the whole transcript** and decides, in a single
+pass, what to record: the general save fields, the Stage, the Typification and the Tags.
 
 Two consequences:
 
 - **It is passive.** Nothing blocks. Mentioned values get captured; unmentioned ones do not.
-- **It is never mentioned in a prompt.** It runs after the conversation. `Al final, guarda el
-  presupuesto y etiqueta al cliente` instructs nothing.
+- **It is never mentioned in a prompt.** It runs after the conversation is over. `Al final, guarda
+  el presupuesto y etiqueta al cliente` instructs nothing.
 
 This is the right home for anything the business wants *if available* — which is most things. Prefer
 it over the gate unless the value is genuinely blocking.
+
+#### Conditions are the authoring surface
+
+Save fields are extracted by description, but **Stages, Typifications and Tags each carry a
+`condition` you write.** That condition is what the evaluator judges the transcript against, so it
+is the whole of your control over them.
+
+Write conditions the way you write edge conditions — as an observable fact about what happened, not
+an instruction:
+
+```
+✅  El cliente confirmó una cita con fecha y hora.
+✅  El cliente pidió hablar con una persona en algún momento.
+❌  Marcar como agendado.                    (an action, not a condition)
+❌  Cliente interesado.                       (true of nearly every conversation)
+```
+
+Each behaves differently when several match, and the differences matter:
+
+| | when several conditions match |
+|---|---|
+| **Stages** | All matched stages are recorded, in the order they were reached — you get the path, not just the destination |
+| **Tags** | **All** matching tags are applied. Multi-valued by design. |
+| **Typifications** | All are evaluated, but **only the last one chronologically is applied.** |
+
+That typification rule is the one that surprises people: writing five typifications whose conditions
+all match a long conversation does not tag it five ways — four are silently discarded. Write
+typifications as mutually exclusive outcomes, the way you would edge conditions on siblings.
+
+Get real keywords from `list_catalog` (`kind: "stages"`, `"typifications"`, `"tags"`). Which stage
+set applies depends on the Cortex's `pipelineType` — `venta` reads `stagesVenta`, `servicio` reads
+`stagesServicio`, and a mismatch means no stage is ever recorded.
+
+If nothing is configured — no stages, fields, typifications or tags — the evaluator call is skipped
+entirely.
 
 ## `targetField` must be real
 
@@ -150,3 +185,9 @@ fields. That is the case the gate exists for and the one nobody tries.
   parent transition, which are field-exempt — often because someone drew a sibling edge.
 - **"Nothing was saved after a simulation."** Simulation writes nothing to real records, by design.
   The trace shows what would have been saved.
+- **"Only one typification was applied when several fit."** By design — the last chronological match
+  wins and the rest are discarded. Make the conditions mutually exclusive.
+- **"No stage was recorded."** The Cortex's `pipelineType` selects which stage set is read, so
+  stages configured on the other set are never evaluated.
+- **"A tag/typification/stage never fires."** Its condition is not something observable in the
+  transcript, or it is too similar to another that matched first.
