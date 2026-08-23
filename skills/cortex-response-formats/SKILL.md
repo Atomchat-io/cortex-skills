@@ -39,34 +39,38 @@ En cualquier otro caso, responde con texto.
 Leaving this out produces one of two failures, both common: every reply becomes a carousel, or the
 format is never used at all. The explicit "otherwise, plain text" line is what prevents the first.
 
-## The limits are real, and silent
+## The limits are real, and mostly handled for you
 
-WhatsApp rejects an over-limit message outright, so the platform reshapes it before sending. **You
-get a different message than you designed, with no error.**
+WhatsApp rejects an over-limit message outright rather than trimming it, so the platform reshapes
+your response before sending. You are not warned — you just get a different message than you
+designed.
 
-| | limit |
-|---|---|
-| Buttons per message | **3** |
-| Button label | 20 characters |
-| List rows (total, across all sections) | **10** |
-| List sections | 10 |
-| List row title | 24 characters |
-| List row description | 72 characters |
-| Carousel cards | **minimum 2** |
-| Text body | 4096 characters (longer is split into several messages) |
-| Interactive body (buttons) | 1024 characters |
-| Header / footer | 60 characters |
+| | limit | what happens over it |
+|---|---|---|
+| Buttons per message | **3** | extras are **dropped** |
+| Button label | 20 chars | **truncated** with `…` |
+| List rows (total) | **10** | extras are **dropped** |
+| List row title | 24 chars | **truncated** |
+| List row description | 72 chars | **truncated** |
+| Carousel cards | **max 10** | extras are **dropped** |
+| Carousel card body | 160 chars | **truncated** |
+| Text body | 4096 chars | **split** into sequential messages, at line or word boundaries |
+| Interactive body (buttons) | 1024 chars | truncated |
+| Header / footer | 60 chars | truncated |
 
-What this means in practice:
+Everything logs `ResponseAdaptedByLimit`, so the trace tells you it happened.
 
-- **"Offer these five plans as buttons" is a bug.** Five do not fit. Use a list.
-- **A one-item carousel will not send.** Carousels need at least two cards — so a "show matching
-  products" carousel breaks precisely when there is exactly one match. Say what to do then:
-  `Si solo hay una opción, descríbela en texto en lugar de usar el carrusel.`
-- **Long button labels get cut.** `Agendar una cita para la próxima semana` is not 20 characters.
+The practical consequence is that **dropping is silent and lossy**. "Offer these five plans as
+buttons" does not fail — it sends the first three, and the customer never learns the other two
+existed. When options come from a tool, say how many to show:
 
-When the options come from a tool, say how many to show:
-`Muestra como máximo 3 opciones en botones; si hay más, usa una lista.`
+```
+Muestra como máximo 3 opciones en botones; si hay más, usa una lista.
+```
+
+**A one-card carousel is handled gracefully**, so do not write instructions around it: the engine
+downgrades it to an image, folds the card's title, body and footer into the caption, and keeps its
+buttons as a separate buttons message. Nothing is lost and no special-casing is needed.
 
 ## WhatsApp Flows
 
@@ -111,9 +115,13 @@ which.
 
 - **"My carousel arrived as plain text."** It failed validation and fell back. Look for
   `ResponseValidationFailed`, `ResponseAutoRepaired` or `ResponseFallbackApplied`.
-- **"Some buttons vanished."** More than 3, or labels over 20 characters. Look for
+- **"Some buttons vanished."** More than 3 — the extras were dropped, not merged. Look for
   `ResponseAdaptedByLimit`.
-- **"The carousel didn't send."** Fewer than 2 cards.
+- **"Labels came out cut with an ellipsis."** Over 20 characters, truncated.
+- **"One reply arrived as several messages."** Over 4096 characters, split at a line or word
+  boundary.
+- **"The carousel arrived as a plain image."** It had one card — the engine downgrades a
+  single-card carousel to an image plus buttons on purpose. Not a bug.
 - **"It never uses the format."** No condition, or one the conversation never satisfies.
 - **"It uses the carousel for everything."** The condition is too broad — say explicitly what to do
   otherwise.

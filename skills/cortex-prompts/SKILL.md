@@ -93,6 +93,15 @@ Consulta @[VerificarStock] antes de prometer disponibilidad.
 Si disponible es false, ofrece las opciones de alternativas.
 ```
 
+**Nothing substitutes it.** The builder UI offers autocomplete and highlights the mention, but the
+engine passes the text through untouched — the model simply reads `@[VerificarStock]` and connects
+it to the tool of that name. Two consequences:
+
+- The name has to **match the tool exactly**. A typo is not an error; the model just sees a
+  reference to a tool that does not exist and works around it.
+- Nothing checks that the referenced tool is attached to this node. Renaming or removing a tool
+  leaves stale mentions in prompts, silently.
+
 ## `/{keyword}` — read-only interpolation
 
 Drop a value the client already has into prompt text:
