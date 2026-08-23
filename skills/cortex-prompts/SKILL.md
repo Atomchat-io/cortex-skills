@@ -144,9 +144,16 @@ Two workarounds:
 ## Recovery messages — writing for a silent customer
 
 A Cortex can send **proactive messages when the customer stops replying**. Up to three attempts,
-each after a delay you set, each with its own message. If the customer still does not answer, the
-Cortex gives up; a timeout exit on the **Flowbuilder** side is the last resort, not something the
-Cortex handles.
+each after a delay you set, each with its own message.
+
+If the customer still does not answer, one more timer runs — the **close timeout**, also configured
+on the Cortex — and then the Cortex signals Flowbuilder, which routes the conversation through its
+**inactivity-close exit**. That exit is a Flowbuilder branch, **not** one of your End nodes, so it
+does not appear among your Exit Ports and nothing in the Cortex runs on that path. Whatever should
+happen to an abandoned conversation belongs to that branch.
+
+Any customer reply at any point cancels the whole chain, and the close is skipped if the
+conversation has already been closed.
 
 These are the only messages the agent sends unprompted, and they are written badly more often than
 any other text in the product — because they get written as if continuing a conversation that is
