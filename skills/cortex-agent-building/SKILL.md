@@ -185,11 +185,32 @@ Keep the `updatedAt` from `get_agent` — you need it to write back.
 describe_agent_schema()   → live field names, structural rules, a valid starting template
 ```
 
-**4. Resolve real ids.** Never invent one:
+**4. Resolve real ids — every one of them.**
 ```
 list_catalog(companyId, kind: "info_fields" | "stages" | "typifications" | "tags"
                             | "whatsapp_flows" | "files" | "dynamic_tables" | "models")
 ```
+
+This is not a nicety. **An invented id or keyword is accepted by the write and then silently does
+nothing** — no validation error, no runtime error, no log entry. The Cortex just has a stage that
+never gets set, a tag that never applies, a file that is never searched.
+
+It applies to every reference you write:
+
+| you are writing | the value must come from |
+|---|---|
+| `targetField` on info collection, `saveFields` | `info_fields` → use `keyword` |
+| `keyword` on `stagesVenta` / `stagesServicio` | `stages` → matching the Cortex's `pipelineType` |
+| `keyword` on `typifications` | `typifications` |
+| `id` on `tags` | `tags` |
+| `id` in `knowledgeBases` | `files` |
+| `dynamicTableId` | `dynamic_tables` |
+| `flowId` on a WhatsApp Flow | `whatsapp_flows` |
+| `aiAgentModel.id` | `models` (or `auto`) |
+| `toolkitSlug` / `toolSlug` | `search_composio_tools` |
+
+If a catalog has no entry for what you need, say so and stop. Do not approximate, and do not reuse a
+similar-looking value from another company.
 
 **5. Write.**
 ```

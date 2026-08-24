@@ -98,9 +98,15 @@ That typification rule is the one that surprises people: writing five typificati
 all match a long conversation does not tag it five ways — four are silently discarded. Write
 typifications as mutually exclusive outcomes, the way you would edge conditions on siblings.
 
-Get real keywords from `list_catalog` (`kind: "stages"`, `"typifications"`, `"tags"`). Which stage
-set applies depends on the Cortex's `pipelineType` — `venta` reads `stagesVenta`, `servicio` reads
-`stagesServicio`, and a mismatch means no stage is ever recorded.
+**Every keyword and id here must be real**, from `list_catalog` (`kind: "stages"`,
+`"typifications"`, `"tags"`). A value you invented is written without complaint and then never
+matches anything at runtime — the condition may be judged true and the stage still not recorded,
+because the keyword resolves to nothing. There is no error to notice.
+
+Which stage set applies depends on the Cortex's `pipelineType` — `venta` reads `stagesVenta`,
+`servicio` reads `stagesServicio`, and a mismatch means no stage is ever recorded.
+
+`describe_agent_schema` returns the exact shape of each of these under `flowFields`.
 
 If nothing is configured — no stages, fields, typifications or tags — the evaluator call is skipped
 entirely.

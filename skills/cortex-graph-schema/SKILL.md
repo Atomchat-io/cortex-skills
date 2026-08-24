@@ -12,8 +12,13 @@ description: The structural contract of a Cortex agent graph — node types, edg
 > commands. Advising on an agent you cannot read is worse than saying you are not connected.
 
 **Field names come from `describe_agent_schema`, not from this document.** That tool derives its
-answer from the schemas the write path validates against, so it cannot go stale. It also returns a
-minimal valid Cortex to start from. Call it before your first write.
+answer from the schemas the write path validates against, so it cannot go stale. It returns the node
+and edge contracts, the flow-level structures under `flowFields` (stages, typifications, tags, save
+fields, timeout, inactivity recovery), and a minimal valid Cortex to start from. Call it before your
+first write.
+
+Whatever you write, **every id and keyword in it must come from `list_catalog`.** Invented values
+are accepted and then silently inert — see `cortex-agent-building`.
 
 This skill covers what a schema cannot express: the rules, and why they exist.
 
