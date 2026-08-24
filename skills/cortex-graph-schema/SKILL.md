@@ -60,7 +60,9 @@ ignores them. Never create one; if you read a Cortex containing one, leave it al
   path skips required field collection — so the authored duplicate creates an ungated route.
 
 **Loop protection** — warning
-- `preventInfiniteLoops` should be `true`. `create_agent` sets it.
+- `preventInfiniteLoops` should be `true`. `create_agent` sets it. It does not decide *whether* a
+  loop is caught — a hard graph recursion limit always applies — but whether the Cortex exits
+  cleanly or the turn errors out. See `cortex-agent-building`.
 
 ## Edge order is load-bearing
 
@@ -159,8 +161,10 @@ A non-empty `flowbuilderImpact` is not a problem to fix; it is a list of people 
 
 - **"It never leaves the first node."** Required fields on that node. Look for `GateBlocked`.
 - **"It jumps somewhere unexpected."** Overlapping conditions, or an authored sibling edge.
-- **"It ended with `out_of_context`."** Loop protection after 5 consecutive transfers — usually
-  conditions that let it bounce.
+- **"It ended with `out_of_context`."** Loop protection after 5 consecutive transfers in one turn —
+  usually two conditions that let it bounce between nodes.
+- **"A turn just failed, with no `FlowEnd` in the trace."** Likely a loop with
+  `preventInfiniteLoops` off: the graph hit its recursion limit and errored instead of exiting.
 - **"My edit did nothing."** The edge may target an ignored node type, or Start may have a second
   outgoing edge that is never read.
 - **"The tree reshaped itself."** Edge order changed. Use operations.
