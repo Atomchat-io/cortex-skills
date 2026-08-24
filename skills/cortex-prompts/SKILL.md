@@ -144,15 +144,38 @@ Two workarounds:
 ## Recovery messages — writing for a silent customer
 
 A Cortex can send **proactive messages when the customer stops replying**. Up to three attempts,
-each after a delay you set, each with its own message.
+each with its own delay and its own message, configured in `inactivityRecovery`. It is the only
+inactivity mechanism there is.
 
-If the customer still does not answer, one more timer runs — the **close timeout**, also configured
-on the Cortex — and then the Cortex signals Flowbuilder, which routes the conversation through its
-**inactivity-close exit**. That exit is a Flowbuilder branch, **not** one of your End nodes, so it
-does not appear among your Exit Ports and nothing in the Cortex runs on that path. Whatever should
+### The timers stack
+
+Each delay is measured from the previous step, not from when the customer went quiet, and the
+**close timeout starts after the last attempt** rather than bounding the whole thing:
+
+```
+inactivityRecovery: {
+  enabled: true,
+  recoveryAttempts: [{ value: 5, unit: "minutes" }],
+  recoveryPrompts:  ["…"],
+  closeTimeout:     { value: 30, unit: "minutes" },
+}
+```
+
+reads as *"5 minutes of silence → send the message → 30 more minutes → give up"*, so the
+conversation stays open for **35 minutes**, not 30. With three attempts of 5, 30 and 60 minutes and
+a 30-minute close, it is **just over two hours**.
+
+This catches people out: a `closeTimeout` of 30 looks like a half-hour cap and never is. Add the
+attempts up before telling anyone how long a conversation stays open.
+
+### What happens at the end
+
+When the attempts run out, the Cortex signals Flowbuilder, which routes the conversation through its
+**inactivity-close exit**. That exit is a Flowbuilder branch, **not** one of your End nodes — it does
+not appear among your Exit Ports and nothing inside the Cortex runs on that path. Whatever should
 happen to an abandoned conversation belongs to that branch.
 
-Any customer reply at any point cancels the whole chain, and the close is skipped if the
+Any customer reply cancels the whole chain at any point, and the close is skipped if the
 conversation has already been closed.
 
 These are the only messages the agent sends unprompted, and they are written badly more often than
