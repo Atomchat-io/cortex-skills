@@ -197,9 +197,9 @@ create_agent(companyId, name, baseSystemPrompt, nodes, edges)
 update_agent(companyId, agentId, expectedUpdatedAt, set?, nodes?, edgeOperations?)
 ```
 `expectedUpdatedAt` guards against overwriting someone editing in the browser; if it is rejected,
-re-read and re-apply rather than forcing. Positions are assigned server-side — never send them.
-Edges are edited through **operations**, not by replacing the array, because edge order determines
-the node tree. See `cortex-graph-schema`.
+re-read and re-apply rather than forcing. Node `position` is ignored — the builder lays the canvas
+out itself. Edges are edited through **operations**, not by replacing the array, because edge order
+determines the node tree. See `cortex-graph-schema`.
 
 **6. Check.**
 ```

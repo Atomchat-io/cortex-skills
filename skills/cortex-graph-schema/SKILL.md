@@ -125,8 +125,15 @@ start
 
 ## Positions
 
-**Never send `position`.** The server lays out the tree top-to-bottom from the topology it derives
-and overwrites whatever you send. Nodes a human dragged in the builder keep their coordinates.
+`position` is required by the schema but **ignored** — send `{ "x": 0, "y": 0 }`.
+
+The builder owns canvas layout. It re-runs its own layout every time a Cortex is opened, anchored on
+each parent and aware of real node sizes, and it freezes any group holding a node someone dragged.
+Coordinates written from here would fight that, so the server discards them: an existing node keeps
+exactly where it sits, and a new one is seeded below its parent for the builder to place properly.
+
+Do not try to arrange the canvas. You cannot, and attempting it produces a worse layout than doing
+nothing.
 
 ## Fields to leave alone
 
