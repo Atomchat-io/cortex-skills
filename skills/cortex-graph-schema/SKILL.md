@@ -173,4 +173,7 @@ A non-empty `flowbuilderImpact` is not a problem to fix; it is a list of people 
   usually two conditions that let it bounce between nodes.
 - **"My edit did nothing."** The edge may target an ignored node type, or Start may have a second
   outgoing edge that is never read.
+- **"The write was rejected for a node with no exit."** Correct — give it an edge to another agent or
+  an End node. If you do not know which outcome the End should represent, ask rather than invent one:
+  each exit is a Flowbuilder branch someone has to wire. See `cortex-agent-building`.
 - **"The tree reshaped itself."** Edge order changed. Use operations.

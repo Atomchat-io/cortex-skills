@@ -74,6 +74,44 @@ hole in your data capture. `check_agent` flags it.
 Back-edges and cross-tree edges are allowed where genuinely needed. They are exceptions, not a
 pattern.
 
+## Every agent node needs a way out
+
+**An agent node with no outgoing edge is invalid** — `check_agent` rejects it. Such a node compiles
+no transition tools at all, so the conversation can only leave it by falling back to its parent, and
+from the root node it cannot leave at all. The customer is stuck talking to something that can never
+finish.
+
+Every agent node must connect onward: to another agent, or to an End node.
+
+### Leaf nodes need every outcome covered
+
+A node with no children is where the conversation actually ends, so its End nodes have to account
+for **every way that step can finish** — not just the one the business hopes for.
+
+Booking an appointment finishes at least three ways: it got booked, the customer decided not to, or
+they need a person. Wiring only `cita_agendada` leaves the other two with nowhere to go, and the
+conversation falls back to the parent and wanders.
+
+When you add a leaf, ask yourself what happens when the customer says no, and when something is
+outside what this step can handle.
+
+### If you do not know which exits to use, ask
+
+This is a decision that belongs to the human, not to you. Exit names are the **routing contract with
+Flowbuilder** — each one becomes a branch someone has to wire up — so inventing plausible ones
+creates work nobody asked for, and worse, a branch that silently goes nowhere.
+
+Before adding End nodes to a Cortex you did not design:
+
+1. **Read what already exists.** `get_agent` shows the current End nodes; reuse them where they fit.
+2. **`check_agent`** reports which Flowbuilder flows depend on this Cortex — if it is non-empty,
+   changing exits affects real routing.
+3. **Ask.** "This node can finish as booked, declined, or needing a human — do you already have exits
+   for those, or should I add them?" is a better contribution than three invented names.
+
+Reusing an existing exit is almost always better than adding one, because it needs no Flowbuilder
+work at all.
+
 ## Where a Cortex lives, and where it stops
 
 A Cortex does not run alone. It is embedded as a node inside a **Flowbuilder** flow, and that flow is
