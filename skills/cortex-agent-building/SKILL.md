@@ -257,13 +257,9 @@ Mechanics to recognise, never to write into a prompt:
 
 - **Transitions are tools.** Each edge compiles to one the model may call, carrying a reason and,
   where the gate applies, the node's required fields.
-- **Loop protection is two mechanisms.** A hard graph recursion limit always applies, whatever the
-  configuration — exceed it and the turn simply errors, with no `FlowEnd` in the trace. Separately,
-  `preventInfiniteLoops` (on by default) adds a graceful exit through `out_of_context` after **5
-  consecutive transfers in one turn**, logged as an errored `FlowEnd`.
-
-  So the flag does not decide whether loops are caught; it decides whether one ends as a clean exit
-  Flowbuilder can route, or as a failed turn. Either way the cause is the same: two transition
-  conditions that let the conversation bounce. The counter resets on every inbound message.
+- **Loop protection is unconditional.** After **5 consecutive transfers in one turn** the Cortex
+  exits through `out_of_context`, logged as an errored `FlowEnd`. The counter resets on every
+  inbound message. A conversation ending there was bouncing between nodes — almost always two
+  transition conditions that can both be true.
 - **Summarization** only triggers at 600 messages or ~700k tokens. It is not why your Cortex forgot
   something.

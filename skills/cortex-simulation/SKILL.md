@@ -121,7 +121,6 @@ Guessing from the reply text skips the two steps that carry the information.
 | Calls it, ignores result | `ToolCall` present | Conversation Goal doesn't say what the response means |
 | Ends unexpectedly | `FlowEnd` with `isError` | Loop protection, or a guardrail |
 | Ends at `out_of_context` | `FlowEnd` | 5 consecutive transfers in one turn — conditions let it bounce |
-| Turn errors, no `FlowEnd` | absence of `FlowEnd` | Same bouncing, but `preventInfiniteLoops` is off, so it hit the graph recursion limit instead of exiting |
 | Buttons missing | `ResponseAdaptedByLimit` | Over 3 buttons, or labels over 20 chars |
 | Format came as text | `Response*Failed` / `Fallback` | Malformed block |
 | Repeats its introduction | — | Identity duplicated in Conversation Goals |
