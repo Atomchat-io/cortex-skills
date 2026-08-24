@@ -238,6 +238,20 @@ Read `agentBuilderLogs`, not just the reply. See `cortex-simulation`.
 
 **8. Iterate, then tell the human to publish.**
 
+## Two flow-level settings worth knowing
+
+**`timezone`** is what the agent uses to resolve "today", "tomorrow" and "in two hours". It must be
+an **IANA name** — `America/Bogota`, `America/Mexico_City`, `America/Argentina/Buenos_Aires` — not an
+abbreviation like `COT` and not an offset like `-05:00`. It defaults to UTC, which is almost never
+what a business wants, so set it. An invalid value is rejected on write; if one somehow gets stored,
+the agent silently falls back to UTC while still being *told* it is in the configured zone.
+
+**`spamGuardrail`** is the only guardrail the product has. Set `enabled` and, optionally, a `prompt`
+describing what counts as abuse; omit the prompt and the product default applies. When it triggers,
+the conversation **ends immediately** — so a prompt that is too broad will cut off real customers.
+The default already excludes the confused, annoyed and insistent, which is the distinction that
+matters.
+
 ## Choosing a model
 
 Each agent node has a model, and the sensible default is **`auto`**.
