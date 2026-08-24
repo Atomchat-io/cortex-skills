@@ -115,8 +115,8 @@ Guessing from the reply text skips the two steps that carry the information.
 | Won't move on | `GateBlocked` | Required fields; all are mandatory |
 | Asks twice | `GateBlocked` | Value arrived before the gated node |
 | Wrong node | `NodeTransfer` | Overlapping conditions, or an authored sibling edge |
-| Ignores a document | no `KnowledgeBaseSearch` | Source not attached, or weak description |
-| Searched, found nothing | `KnowledgeBaseSearch` present | Description too vague, or content absent |
+| Ignores a document | no `KnowledgeBaseSearch` | Source not attached to that node, or the classifier judged the message as not needing a lookup |
+| Searched, found nothing | `KnowledgeBaseSearch` present | The answer is not in the content as findable prose, or too many sources are attached and the 4 available chunks went elsewhere |
 | Never calls a tool | no `ToolCall` | Tool description doesn't say *when* to use it |
 | Calls it, ignores result | `ToolCall` present | Conversation Goal doesn't say what the response means |
 | Ends unexpectedly | `FlowEnd` with `isError` | Loop protection, or a guardrail |
