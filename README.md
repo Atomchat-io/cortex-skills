@@ -7,7 +7,11 @@ Pair them with the Cortex MCP server and your agent can read, create, edit and s
 agents directly. Without it the skills still explain the product, and will tell you they cannot see
 any agent rather than inventing one.
 
-See [INSTALL.md](./INSTALL.md).
+Install the skills, then ask your agent to run **`/cortex-setup`** — it walks you through connecting
+the server. You need two things from your Atom administrator: a URL and a key. No environment
+variables, no shared secrets in a repo.
+
+See [INSTALL.md](./INSTALL.md) if you would rather read it than be walked through it.
 
 ```bash
 npx skills add Atomchat-io/cortex-skills
@@ -17,6 +21,7 @@ npx skills add Atomchat-io/cortex-skills
 
 | skill | covers |
 |---|---|
+| `cortex-setup` | Connecting this agent to the Cortex MCP server. Run `/cortex-setup`. |
 | `cortex-agent-building` | The mental model and the end-to-end workflow. Start here. |
 | `cortex-graph-schema` | Node types, edges, edge ordering, structural rules |
 | `cortex-prompts` | System Instructions vs Conversation Goal, `/{keyword}` interpolation |

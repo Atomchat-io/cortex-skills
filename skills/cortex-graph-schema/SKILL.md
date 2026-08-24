@@ -7,9 +7,9 @@ description: The structural contract of a Cortex agent graph — node types, edg
 
 > **Cortex tools required.** This skill assumes the Cortex MCP server is connected. If tools like
 > `list_agents` and `describe_agent_schema` are not available to you, stop and tell the user how to
-> connect it — they need the server URL and their personal key from whoever administers the Atom
-> project, then an MCP entry in their agent's config. `cortex-agent-building` has the per-agent
-> commands. Advising on an agent you cannot read is worse than saying you are not connected.
+> connect it — run the `cortex-setup` skill, which walks through getting a URL and key and writing
+> the config for their agent. Advising on an agent you cannot read is worse than saying you are not
+> connected.
 
 **Field names come from `describe_agent_schema`, not from this document.** That tool derives its
 answer from the schemas the write path validates against, so it cannot go stale. It returns the node

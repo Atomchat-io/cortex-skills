@@ -7,9 +7,9 @@ description: Build and test HTTP tools for a Cortex agent — handlebars paramet
 
 > **Cortex tools required.** This skill assumes the Cortex MCP server is connected. If tools like
 > `list_agents` and `describe_agent_schema` are not available to you, stop and tell the user how to
-> connect it — they need the server URL and their personal key from whoever administers the Atom
-> project, then an MCP entry in their agent's config. `cortex-agent-building` has the per-agent
-> commands. Advising on an agent you cannot read is worse than saying you are not connected.
+> connect it — run the `cortex-setup` skill, which walks through getting a URL and key and writing
+> the config for their agent. Advising on an agent you cannot read is worse than saying you are not
+> connected.
 
 An HTTP tool is **one outbound request**. That is its whole scope, and its strength: no code to
 maintain, configured entirely in the tool definition.

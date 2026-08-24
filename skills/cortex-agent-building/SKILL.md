@@ -13,51 +13,14 @@ order; the other `cortex-*` skills cover individual surfaces.
 Everything below depends on the Cortex MCP server. Before anything else, check whether tools named
 `list_agents`, `get_agent` and `describe_agent_schema` are available to you.
 
-**If they are not, stop and tell the user how to connect it.** Do not work around it — there is no
-other route to a Cortex, and reading these skills without the tools would let you give confident,
-unverifiable advice about an agent you cannot see.
+**If they are not, stop and run `cortex-setup`** — it walks the user through getting a URL and key
+and writing the config for whichever agent they use. Do not try to work around the missing tools:
+there is no other route to a Cortex, and answering from these skills alone would mean giving
+confident, unverifiable advice about an agent you cannot see.
 
-Tell them roughly this, adapted to whichever agent they are using:
-
-> I have the Cortex skills but not the Cortex tools, so I can't read or change any agent yet.
->
-> You need two values from whoever administers the Atom project — the server **URL** for the
-> environment you want, and your **personal key**. The URL is the only thing separating a test
-> deployment from a live one, and the key identifies you: every Cortex you create or edit records
-> your name, so don't share it.
->
-> Then register the server with those values, in whichever agent you use:
->
-> **Claude Code**
-> ```bash
-> claude mcp add --transport http cortex "<url>" \
->   --header "x-cortex-key: <key>" --scope user
-> ```
->
-> **Cursor** — `~/.cursor/mcp.json`:
-> ```json
-> { "mcpServers": { "cortex": {
->     "url": "<url>",
->     "headers": { "x-cortex-key": "<key>" } } } }
-> ```
->
-> **Codex** — `~/.codex/config.toml`:
-> ```toml
-> [mcp_servers.cortex]
-> url = "<url>"
-> http_headers = { "x-cortex-key" = "<key>" }
-> ```
->
-> Other agents take the same URL and `x-cortex-key` header in their own MCP config — see the
-> `INSTALL.md` shipped with these skills.
->
-> Restart the agent afterwards; MCP servers connect at startup.
-
-If the tools *are* present but a call fails, the two failures look alike and have different fixes:
-a **JSON** error about the key means the request reached the server and the key is wrong, missing or
-revoked; an **HTML 403** means it never got there at all, which is an infrastructure problem rather
-than a credential one. Either way, also confirm the URL points at the environment they think it
-does.
+If the tools *are* present but a call fails, `cortex-setup` also covers telling the failures apart —
+a JSON error means the key was rejected, an HTML 403 means the request never arrived, and they have
+different fixes.
 
 ## The one thing to get right
 

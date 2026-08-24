@@ -43,6 +43,10 @@ key stay yours and nothing depends on environment variables being set before the
 
 ---
 
+> **The short version:** install the skills, then ask your agent to run `/cortex-setup`. It asks for
+> your URL and key and writes the right config for whichever agent you use. The rest of this page is
+> the same thing, written out.
+
 ## 2. Credentials for the MCP server
 
 The Cortex MCP server runs inside Atom's infrastructure. You need two values from whoever
