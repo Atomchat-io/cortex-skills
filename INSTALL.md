@@ -31,12 +31,15 @@ npx skills update                     # pull the latest later
 
 You can also install a single skill with `--skill cortex-code-tools`.
 
-For a Claude Code plugin instead — the same skills plus the MCP server declaration in one step:
+Claude Code users can install the same skills as a plugin instead:
 
 ```bash
 claude plugin marketplace add Atomchat-io/cortex-skills
 claude plugin install cortex@atom
 ```
+
+The plugin ships **skills only**. The MCP server is added separately in step 3, so that your URL and
+key stay yours and nothing depends on environment variables being set before the agent starts.
 
 ---
 
@@ -57,15 +60,8 @@ Three things to know:
   the only thing separating a test deployment from a live one. Check which you have.
 - **Keys are revocable** by your administrator.
 
-Keep them in your environment, not in a config file:
-
-```bash
-# ~/.zshrc or ~/.bashrc
-export CORTEX_MCP_URL="https://…/cortexMcp"
-export CORTEX_MCP_KEY="cxk_…"
-```
-
-Every config below reads from there, so nothing secret lands in a file you might commit.
+You pass both directly when adding the server, below. Treat the key like a password: it grants
+write access to every Cortex in that environment.
 
 ---
 
@@ -74,12 +70,15 @@ Every config below reads from there, so nothing secret lands in a file you might
 ### Claude Code
 
 ```bash
-claude mcp add --transport http cortex "$CORTEX_MCP_URL" \
-  --header "x-cortex-key: $CORTEX_MCP_KEY" --scope user
+claude mcp add --transport http cortex "<your CORTEX_MCP_URL>" \
+  --header "x-cortex-key: <your CORTEX_MCP_KEY>" --scope user
 ```
 
-Drop `--scope user` to limit it to the current project. Verify with `claude mcp list`, or `/mcp` in
-a session.
+`--scope user` makes it available in every project; drop it to limit it to the current one. Verify
+with `claude mcp list`, or `/mcp` inside a session.
+
+This writes the values into your Claude config, so the server connects regardless of which shell
+started the process.
 
 ### Cursor
 
@@ -89,16 +88,18 @@ a session.
 {
   "mcpServers": {
     "cortex": {
-      "url": "${env:CORTEX_MCP_URL}",
+      "url": "<your CORTEX_MCP_URL>",
       "headers": {
-        "x-cortex-key": "${env:CORTEX_MCP_KEY}"
+        "x-cortex-key": "<your CORTEX_MCP_KEY>"
       }
     }
   }
 }
 ```
 
-Cursor infers the transport from the URL, so there is no `type` field.
+Cursor infers the transport from the URL, so there is no `type` field. If you would rather not put
+the key in the file, Cursor also supports `${env:VAR}` in both values — just make sure the variable
+is exported *before* Cursor starts, or it will not expand.
 
 ### Codex CLI
 
@@ -106,13 +107,16 @@ Cursor infers the transport from the URL, so there is no `type` field.
 
 ```toml
 [mcp_servers.cortex]
-url = "https://…/cortexMcp"
-env_http_headers = { "x-cortex-key" = "CORTEX_MCP_KEY" }
+url = "<your CORTEX_MCP_URL>"
+http_headers = { "x-cortex-key" = "<your CORTEX_MCP_KEY>" }
 ```
 
-`env_http_headers` maps a header to the **name of an environment variable**, which is what you want.
-`http_headers` takes a literal value and would put your key in the file. Codex does not expand
-variables in `url`, so that one is written out.
+To keep the key out of the file, use `env_http_headers` instead — it maps a header to the **name**
+of an environment variable, which must be exported before Codex starts:
+
+```toml
+env_http_headers = { "x-cortex-key" = "CORTEX_MCP_KEY" }
+```
 
 ### Windsurf, Zed, Cline, Antigravity and other JSON-config agents
 
@@ -197,5 +201,5 @@ Two things to keep in mind:
 | Agent has skills but no tools | Server not connected — check your agent's MCP list |
 | `401` or missing-key error | Key absent, wrong, or revoked. Check the variable is set in the shell that launched the agent |
 | Connects, every call fails | `CORTEX_MCP_URL` points somewhere stale or wrong |
-| Config shows a literal `${CORTEX_MCP_KEY}` | The variable was not set when the agent started |
+| A literal `${...}` appears instead of your key | You used the env-var form and the variable was not exported **before** the agent started. Restart it, or paste the value directly |
 | Tools work, agent still guesses | Skills not installed — run `npx skills add` |

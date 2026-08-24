@@ -21,42 +21,42 @@ Tell them roughly this, adapted to whichever agent they are using:
 
 > I have the Cortex skills but not the Cortex tools, so I can't read or change any agent yet.
 >
-> You need two values from whoever administers the Atom project:
+> You need two values from whoever administers the Atom project — the server **URL** for the
+> environment you want, and your **personal key**. The URL is the only thing separating a test
+> deployment from a live one, and the key identifies you: every Cortex you create or edit records
+> your name, so don't share it.
 >
-> - **`CORTEX_MCP_URL`** — the `cortexMcp` function URL. This is the only thing separating QA from
->   production, so check which one you have.
-> - **`CORTEX_MCP_KEY`** — your personal key, starting `cxk_`. It identifies you: every Cortex you
->   create or edit records your name, so don't share it.
->
-> Export both in your shell profile, then connect the server:
+> Then register the server with those values, in whichever agent you use:
 >
 > **Claude Code**
 > ```bash
-> claude mcp add --transport http cortex "$CORTEX_MCP_URL" \
->   --header "x-cortex-key: $CORTEX_MCP_KEY" --scope user
+> claude mcp add --transport http cortex "<url>" \
+>   --header "x-cortex-key: <key>" --scope user
 > ```
 >
-> **Cursor** — in `~/.cursor/mcp.json`:
+> **Cursor** — `~/.cursor/mcp.json`:
 > ```json
 > { "mcpServers": { "cortex": {
->     "url": "${env:CORTEX_MCP_URL}",
->     "headers": { "x-cortex-key": "${env:CORTEX_MCP_KEY}" } } } }
+>     "url": "<url>",
+>     "headers": { "x-cortex-key": "<key>" } } } }
 > ```
 >
-> **Codex** — in `~/.codex/config.toml`:
+> **Codex** — `~/.codex/config.toml`:
 > ```toml
 > [mcp_servers.cortex]
-> url = "<your CORTEX_MCP_URL>"
-> env_http_headers = { "x-cortex-key" = "CORTEX_MCP_KEY" }
+> url = "<url>"
+> http_headers = { "x-cortex-key" = "<key>" }
 > ```
 >
-> **Other agents** use the same URL and `x-cortex-key` header in their own MCP config —
-> see the `INSTALL.md` that ships alongside these skills.
+> Other agents take the same URL and `x-cortex-key` header in their own MCP config — see the
+> `INSTALL.md` shipped with these skills.
 >
-> Restart the agent afterwards — the variables must be set **before** it starts.
+> Restart the agent afterwards; MCP servers connect at startup.
 
-If the tools *are* present but a call returns an authentication error, the key is missing, wrong or
-revoked. Same fix, and worth confirming `CORTEX_MCP_URL` points at the environment they think it
+If the tools *are* present but a call fails, the two failures look alike and have different fixes:
+a **JSON** error about the key means the request reached the server and the key is wrong, missing or
+revoked; an **HTML 403** means it never got there at all, which is an infrastructure problem rather
+than a credential one. Either way, also confirm the URL points at the environment they think it
 does.
 
 ## The one thing to get right
@@ -216,6 +216,26 @@ simulate_turn(companyId, agentId, message, sessionId)  → continue it
 Read `agentBuilderLogs`, not just the reply. See `cortex-simulation`.
 
 **8. Iterate, then tell the human to publish.**
+
+## Choosing a model
+
+Each agent node has a model, and the sensible default is **`auto`**.
+
+`auto` is **not a model** — it is a sentinel meaning "use the engine's default chain". It resolves
+to the first model in that chain, with every other model behind it as fallback.
+
+The thing people get wrong: **pinning a specific model does not lose failover.** A pinned model
+becomes the primary and the *entire* chain still backs it up, including models newer than the one
+you picked. So the choice is only about which model is tried *first*.
+
+That matters when a pinned model has since been retired. The call fails, the engine treats a
+model-not-found as transient, and it falls through the chain — so the Cortex still works, but every
+single turn wastes a round-trip on a model that no longer exists. Switching such a node to `auto` is
+worth doing; just be clear it is about removing a wasted call, not about restoring failover that was
+never lost.
+
+`list_catalog` with `kind: "models"` returns the selectable ids. Prefer `auto` unless someone has a
+concrete reason for a specific model.
 
 ## Which skill for what
 
