@@ -1,5 +1,9 @@
 # Installing
 
+> **The short version.** Install the skills, then run `/cortex-setup` in your agent — always run that
+> first. It tells you whether you are already connected, and walks you through it if not. Everything
+> below is the same thing written out, for when you would rather read it.
+
 Two pieces, and you want both:
 
 | | what it is | how it installs |
@@ -43,9 +47,7 @@ key stay yours and nothing depends on environment variables being set before the
 
 ---
 
-> **The short version:** install the skills, then ask your agent to run `/cortex-setup`. It asks for
-> your URL and key and writes the right config for whichever agent you use. The rest of this page is
-> the same thing, written out.
+
 
 ## 2. Credentials for the MCP server
 
