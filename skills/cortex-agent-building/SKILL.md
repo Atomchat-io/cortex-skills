@@ -201,7 +201,7 @@ It applies to every reference you write:
 | you are writing | the value must come from |
 |---|---|
 | `targetField` on info collection, `saveFields` | `info_fields` → use `keyword` |
-| `keyword` on `stagesVenta` / `stagesServicio` | `stages` → matching the Cortex's `pipelineType` |
+| `keyword` on `stagesVenta` | `stages` → the company's own configured stages |
 | `keyword` on `typifications` | `typifications` |
 | `id` on `tags` | `tags` |
 | `id` in `knowledgeBases` | `files` |

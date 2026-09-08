@@ -109,8 +109,11 @@ typifications as mutually exclusive outcomes, the way you would edge conditions 
 matches anything at runtime — the condition may be judged true and the stage still not recorded,
 because the keyword resolves to nothing. There is no error to notice.
 
-Which stage set applies depends on the Cortex's `pipelineType` — `venta` reads `stagesVenta`,
-`servicio` reads `stagesServicio`, and a mismatch means no stage is ever recorded.
+Stages live on **`stagesVenta`**, and that is the only set. The product runs the sales pipeline:
+`list_catalog` returns the company's own configured stages, the builder shows no other list, and
+`pipelineType` is pinned to `venta` when a Cortex is created here. A Cortex on any other pipeline has
+its stages resolved at the end of the conversation and then **discarded before they are written** —
+no error, no log, no stage. If you read one like that, tell the human rather than working around it.
 
 `describe_agent_schema` returns the exact shape of each of these under `flowFields`.
 
@@ -200,7 +203,8 @@ fields. That is the case the gate exists for and the one nobody tries.
   The trace shows what would have been saved.
 - **"Only one typification was applied when several fit."** By design — the last chronological match
   wins and the rest are discarded. Make the conditions mutually exclusive.
-- **"No stage was recorded."** The Cortex's `pipelineType` selects which stage set is read, so
-  stages configured on the other set are never evaluated.
+- **"No stage was recorded."** Either the keyword is not one from `list_catalog`, or the Cortex's
+  `pipelineType` is not `venta` — stages are only ever written for the sales pipeline, and anything
+  else drops them silently.
 - **"A tag/typification/stage never fires."** Its condition is not something observable in the
   transcript, or it is too similar to another that matched first.
