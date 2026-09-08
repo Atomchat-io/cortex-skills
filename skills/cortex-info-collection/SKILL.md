@@ -23,9 +23,15 @@ have:
 | Pass a value into a tool | **A tool parameter** | `cortex-http-tools` |
 | Require an answer before the conversation can advance | **Node info collection** | below |
 | Store a value on the client record for the business | **Passive collection** | below |
-| Read a value the client already has | **`/{keyword}`** | `cortex-prompts` |
+| Read a value the client already has | **`/{keyword}`**, if justified | `cortex-prompts` |
 
 Only three involve fields, and only two of them write.
+
+Rows two and five look interchangeable and are not. **A tool parameter is the default**: the model
+supplies it from the conversation, nothing has to exist on the record first, and it never fails
+silently. Reading a stored value is the exception, and it needs a reason — a value nobody should
+ever be asked for, like an identifier or an assignment the business made. Ask the human which they
+want rather than deciding it yourself.
 
 The first row is where most mistakes live: capturing a field so the agent "remembers" it. It already
 remembers. The field just adds a mandatory question and a blocking gate.
@@ -127,9 +133,10 @@ error at write time, no error at runtime, just missing data.
 
 Two ways, with different guarantees:
 
-**`/{keyword}` in a prompt** — read-only, resolved once at conversation start, and **renders a
-default when the client has no value**. It cannot tell you a value was missing. Fine for
-personalisation, unsafe for anything conditional. See `cortex-prompts`.
+**`/{keyword}` in a prompt** — read-only, resolved once at conversation start, and when the client
+has no value **the literal `/{keyword}` is left in the text**, braces and all. It cannot tell you a
+value was missing, and the agent will read the placeholder out loud unless the prompt says what one
+means. Fine for personalisation, unsafe for anything conditional. See `cortex-prompts`.
 
 **`getFields(...)` in a code tool** — reports what actually exists, returning `null` when the client
 has none of the requested fields. The only reliable way to branch on whether a value is present. See

@@ -44,10 +44,36 @@ the End node. Passing a value and storing a value are unrelated. See `cortex-inf
 
 `{{handlebars}}` work in the **URL, headers and body template**.
 
-## Client fields: two different syntaxes
+**Default to parameters for everything.** Reach for a stored field only when you can say why the
+value cannot come from the conversation — see the next section for what counts.
 
-You can also inject a value the client **already has on record**. The syntax is **not the same
-everywhere**, and this is the most common thing to get wrong:
+## Client fields: the exception, not the default
+
+You *can* inject a value the client already has on record. Treat it as the exception.
+
+A `{{parameter}}` costs nothing: the model supplies it from the conversation, it needs nothing to
+exist beforehand, and the call always goes out. A field reference is a **dependency** — the value
+must already be on that client's record, and if it is not, the request is never sent at all.
+
+So the bar is high. A field reference is justified when the value is one **nobody should ever be
+asked for in the conversation** and the request cannot be made without it:
+
+- an identifier the record already carries and the customer has no reason to recite — `documento`,
+  `numero_de_poliza`, a CRM id written there by an earlier automation
+- an assignment the business made, not the customer — `asesor_asignado`, `sucursal`
+- anything set by the system before the session opened
+
+It is **not** justified for a value the customer will mention anyway, or one the agent could simply
+ask for. "The product code" is a parameter. "The customer's own name, because we happen to store it"
+is a parameter too, unless the request genuinely cannot proceed without the stored one.
+
+**Ask the human before adding one.** "Should this read `documento` from the client record, or should
+the agent ask for it?" — the same question as in `cortex-prompts`, and it has the same consequence:
+reading from the record means the tool is dead for any client the record never covered.
+
+### The syntax is not the same everywhere
+
+When you are justified, get the syntax right — this is the most common thing to get wrong:
 
 | where | syntax | example |
 |---|---|---|
@@ -61,13 +87,14 @@ Two details on the URL form:
 
 - The `:field` must **follow a slash**. `?doc=:documento` is not substituted; `/doc/:documento` is.
 - Its value is **URL-encoded** automatically. `{{handlebars}}` in a URL is **not** — so a parameter
-  containing a space, `&` or `?` can break the request. Prefer `:field` for path segments when the
-  value is a stored field.
+  containing a space, `&` or `?` can break the request. If a parameter has to sit in a path segment,
+  make sure it is a clean one.
 
 ### A missing field aborts the call
 
-This is the important difference from prompts. In a prompt, an absent `/{keyword}` is simply left in the text
-and the conversation carries on. In an HTTP tool, **the request is not sent at all**:
+This is the important difference from prompts, and the reason for the bar above. In a prompt, an
+absent `/{keyword}` is simply left in the text and the conversation carries on. In an HTTP tool,
+**the request is not sent at all**:
 
 ```
 This action was not executed: the required field(s) documento have no value.
@@ -78,8 +105,8 @@ usually a field reference for a value the client does not have — check the `To
 trace before assuming the endpoint is at fault.
 
 Every `:field` in the URL and every `/{field}` in the headers or body is checked this way, so a tool
-depending on five fields will not run until all five exist. That is a good reason to prefer
-`{{parameters}}`, which the model supplies from the conversation and which never block.
+depending on five fields will not run until all five exist. Five field references is not a
+configuration, it is a tool that will fail for most of the customer base.
 
 ## Writing the description
 
@@ -189,11 +216,12 @@ description is weak; called-and-ignored means the Conversation Goal is.
 - **"Works in the test, not in a conversation."** The value you hardcoded as `testValues` isn't
   arriving as a parameter. Check the arguments on the `ToolCall` entry.
 - **"The tool silently never runs."** A `:field` or `/{field}` refers to a value this client does
-  not have, so the request was never sent. The trace carries the message naming the fields.
+  not have, so the request was never sent. The trace carries the message naming the fields. Ask
+  whether that field reference was justified at all — a `{{parameter}}` would have gone out.
 - **"The field placeholder came through literally."** Wrong syntax for that position — `:field` in
   the URL, `/{field}` in headers and body.
-- **"The URL is malformed at runtime."** A `{{parameter}}` in the URL is not URL-encoded. Use
-  `:field` for a stored value, or ensure the parameter is a clean path segment.
+- **"The URL is malformed at runtime."** A `{{parameter}}` in the URL is not URL-encoded. Make sure
+  it is a clean path segment; a value with a space, `&` or `?` needs escaping upstream.
 - **"Nothing was saved."** The `targetField` keyword doesn't exist in the catalog.
 - **"The conversation carried on as if nothing failed."** By design — a tool error tells the agent
   to inform the user and continue, so a broken endpoint reads as a vague reply rather than an error.

@@ -129,6 +129,12 @@ is how the record gets populated in the first place.
 Do not guess between these. "Do you want me to read `documento` from the client record, or have the
 agent ask for it?" takes one line and avoids building a prompt that reads a field nobody populates.
 
+The bar for an interpolation is a value **nobody should ever be asked for** and that the agent
+nonetheless needs: an identifier already on the record, an assignment the business made
+(`asesor_asignado`, `sucursal`), something the system set before the session opened. A value the
+customer would happily state is not a reason to add a field — let the agent ask, and let passive
+collection store it.
+
 ### The context block
 
 When you do interpolate, **map every field once at the top of the System Instructions**, then refer

@@ -138,6 +138,12 @@ const datos = await getFields("nombre", "email");
 interpolation leaves the literal `/{keyword}` in the text when the value is absent, so when
 behaviour must depend on what exists, check it here. See `cortex-prompts`.
 
+**Prefer a declared parameter over `getFields` for anything the conversation can supply.** A
+parameter always arrives; a stored field is there only if some earlier step put it there, and
+`getFields` returning `null` is a branch you then have to handle. Read the record when the value is
+one nobody should be asked for — an identifier, an assignment the business made — or when the whole
+point is to find out whether it exists.
+
 ## Calling integrations
 
 ```js

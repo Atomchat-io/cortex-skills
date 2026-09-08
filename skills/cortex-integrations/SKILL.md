@@ -80,7 +80,26 @@ If a node genuinely needs many actions, that usually means it is doing too much 
 `cortex-agent-building`.
 
 Attach via `update_agent`, writing the `tools` array on the agent node: each entry carries the
-`toolkitSlug`, the `toolSlug`, a name and a description.
+`toolkitSlug`, the `toolSlug`, a `name` and a `description`.
+
+### Copy the name and description from Composio verbatim
+
+**Never write your own.** Paste the `name` and `description` exactly as `search_composio_tools`
+returned them.
+
+The reason is that they are not what the model reads. At runtime the engine fetches the action from
+Composio by `toolSlug` and binds **Composio's own live description and its `inputParameters`
+schema** — the stored `name` and `description` reach no model at all; they are what a human sees in
+the builder. So an improved description does not improve tool selection by one word. All it does is
+make the builder disagree with what the agent is actually working from, and send whoever debugs it
+next looking in the wrong place.
+
+`toolSlug` is the only part of the entry with runtime meaning. Get it exactly right, and let the
+other two be Composio's.
+
+If a description is genuinely too vague for the model to pick the action reliably, the fix is in the
+**Conversation Goal** — say when to reach for that action — not in a rewritten `description` that
+nothing reads.
 
 ## Calling integrations from code
 
@@ -142,5 +161,7 @@ Treat headers as credentials: they are visible to anyone who can edit the Cortex
 - **"The MCP tools disappeared."** The server was unreachable; the snapshot lets the agent say so
   rather than pretend the tools never existed.
 - **"It calls the wrong action."** Too many attached, with overlapping descriptions. Attach fewer.
+  Note the descriptions in play are Composio's, not the ones stored on the node — rewriting those
+  changes nothing. Steer it from the Conversation Goal instead.
 - **"Search returns nothing."** Try describing the task differently, or drop the toolkit filter and
   search globally — the match is semantic, so wording matters more than keywords.
