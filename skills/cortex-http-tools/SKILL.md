@@ -66,7 +66,7 @@ Two details on the URL form:
 
 ### A missing field aborts the call
 
-This is the important difference from prompts. In a prompt, an absent `/{keyword}` renders a default
+This is the important difference from prompts. In a prompt, an absent `/{keyword}` is simply left in the text
 and the conversation carries on. In an HTTP tool, **the request is not sent at all**:
 
 ```

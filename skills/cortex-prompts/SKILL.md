@@ -102,44 +102,91 @@ it to the tool of that name. Two consequences:
 - Nothing checks that the referenced tool is attached to this node. Renaming or removing a tool
   leaves stale mentions in prompts, silently.
 
-## `/{keyword}` — read-only interpolation
+## Values: prefer variables, map fields once at the top
 
-Drop a value the client already has into prompt text:
+Two ways a value reaches the agent, and they are not equal.
+
+**A tool parameter** — a `{{handlebars}}` variable on an HTTP tool, or a declared parameter on a
+code tool. The model supplies it at call time from the conversation. **Prefer this.** It is what
+tools actually understand, it needs nothing to exist on the client record beforehand, and it never
+silently fails.
+
+**A field interpolation** — `/{keyword}` in prompt text, pulling a value the client already has.
+Useful, but constrained: read-only, resolved once when the conversation starts, and it only works if
+the field already exists on that client *before the session begins*.
+
+### Ask before using a field interpolation
+
+This is a decision for the human, not for you. Before writing any `/{keyword}`, ask which they want:
+
+**Use an existing field** — the value is already on the client record, and you interpolate it. Fast,
+no questions asked of the customer, but it is only there if the record already had it.
+
+**Ask the customer during the conversation** — no interpolation at all. The agent asks, and the
+value is written back by passive collection at the end of the session. Slower, always works, and it
+is how the record gets populated in the first place.
+
+Do not guess between these. "Do you want me to read `documento` from the client record, or have the
+agent ask for it?" takes one line and avoids building a prompt that reads a field nobody populates.
+
+### The context block
+
+When you do interpolate, **map every field once at the top of the System Instructions**, then refer
+to those names in natural language everywhere else:
 
 ```
-Saluda al cliente por su nombre: /{name}
+# Contexto
+nombre: /{name}
+plan_actual: /{plan_contratado}
+asesor: /{asesor_asignado}
 ```
 
-Get real keywords from `list_catalog` with `kind: "info_fields"` — it returns the exact `/{keyword}`
-string to paste. Never guess one; an unknown keyword simply does not resolve.
+Then, in a Conversation Goal:
 
-Three rules, all regularly violated:
+```
+Saluda al cliente por su nombre.
+Si su plan_actual es Premium, ofrécele la revisión sin coste.
+Al agendar, llama a @[CreateEvent] con el asesor del contexto.
+```
 
-**1. It is read-only.** There is no write form:
+Two reasons this beats scattering `/{...}` through the text. The mapping is in one place, so what
+the Cortex depends on is visible at a glance instead of buried in five paragraphs. And the rest of
+the prompt reads as instructions to a person rather than a template — which is also how a tool call
+gets described: *"con el asesor del contexto"*, not `/{asesor_asignado}` pasted into an argument.
+
+### What an unresolved value looks like
+
+If the client has no value, **the placeholder is left in the text exactly as written** — the agent
+literally sees `/{plan_contratado}`, braces and all. Not blank, not a default.
+
+That is workable, but only if you say so:
+
+```
+# Contexto
+plan_actual: /{plan_contratado}
+
+Si plan_actual aparece literalmente como /{plan_contratado}, es que no tenemos el dato:
+no lo menciones y pregúntalo si hace falta.
+```
+
+Without that line the agent will happily tell a customer their plan is `/{plan_contratado}`.
+
+When a branch genuinely depends on whether a value exists, do not infer it from the placeholder —
+use a code tool with `getFields(...)`, which reports what is actually there. See `cortex-code-tools`.
+
+### It is read-only, and frozen at turn one
+
+There is no write form:
 
 ```
 ❌ Guarda la respuesta en /{presupuesto} y luego usa /{presupuesto} para calcular.
 ```
 
-Neither half works. The first does nothing; the second interpolates whatever was on the record when
-the conversation began.
+Neither half works. And a value written mid-conversation will not appear — the text is resolved once
+and never re-rendered.
 
-**2. Resolved once, at conversation start.** A value written mid-conversation will not appear. The
-text the agent sees is fixed at turn one and never re-rendered.
-
-**3. A missing value renders as the default** — not blank, not an error. There is no way to ask
-whether the client has a value, so a prompt written assuming it is populated will cheerfully address
-someone by a placeholder.
-
-Two workarounds:
-
-- **Tell the Conversation Goal what the default means:**
-  ```
-  El nombre del cliente aparece como /{name}. Si eso parece un marcador de posición
-  en lugar de un nombre real, pídeselo antes de continuar.
-  ```
-- **Use a code tool** with `getFields(...)`, which reports what actually exists, when the branch
-  genuinely depends on it. See `cortex-code-tools`.
+Get real keywords from `list_catalog` with `kind: "info_fields"`, which returns the exact
+`/{keyword}` string to paste. Never invent one.
 
 ## Recovery messages — writing for a silent customer
 

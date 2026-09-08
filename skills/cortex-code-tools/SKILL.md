@@ -135,7 +135,7 @@ const datos = await getFields("nombre", "email");
 ```
 
 `getFields` is also the only reliable way to discover whether a client **has** a value. `/{keyword}`
-interpolation renders a default when the value is absent and cannot tell you it was missing, so when
+interpolation leaves the literal `/{keyword}` in the text when the value is absent, so when
 behaviour must depend on what exists, check it here. See `cortex-prompts`.
 
 ## Calling integrations

@@ -14,6 +14,14 @@ because that is what reaches the customer.
 Written once. Inherited by every node.
 
 ```
+# Contexto
+{solo si de verdad hace falta — pregunta antes de interpolar un campo}
+nombre: /{name}
+{otro_dato}: /{keyword}
+
+Si alguno aparece literalmente como /{keyword}, es que no tenemos el dato:
+no lo menciones y pídelo si hace falta.
+
 # Identidad
 Eres el asistente de {NEGOCIO}, {qué hace el negocio en una frase}.
 Atiendes a clientes por WhatsApp.
@@ -40,6 +48,10 @@ de lo anterior, dile que lo pasas con un compañero y despídete.
 
 Notes on each block:
 
+- **Contexto** — only the fields this Cortex actually reads, mapped once, so the dependency is
+  visible in one place instead of scattered through the text. Everything after it refers to them by
+  name, in natural language. **Ask before adding one**: the human decides whether a value comes from
+  the client record or gets asked for during the conversation. See `cortex-prompts`.
 - **Identidad** — one or two lines. Longer is not clearer.
 - **Tono** — the reply-length instruction earns its place: without it agents drift long, which reads
   badly on WhatsApp.
@@ -242,8 +254,11 @@ Against any Cortex's prompts:
 - [ ] No prompt tells the agent to save a field, read a document, or move to a node
 - [ ] Every tool that returns data the agent must act on has an `@[ToolName]` line explaining it
 - [ ] Every `/{keyword}` is a real keyword from `list_catalog`
+- [ ] Every interpolation was agreed with the human, not assumed
+- [ ] Interpolations are mapped once in a Contexto block, not scattered through the text
 - [ ] No `/{keyword}` is used as somewhere to write
-- [ ] Any prompt depending on a `/{keyword}` says what the default means
+- [ ] The prompt says what an unresolved `/{keyword}` means
+- [ ] Values a tool needs are tool parameters, not fields
 - [ ] The "qué no haces nunca" list reflects real mistakes, not hypotheticals
 - [ ] Required fields are only those the conversation genuinely cannot continue without
 - [ ] End nodes are named for outcomes, not for the action Flowbuilder should take
