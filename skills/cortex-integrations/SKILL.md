@@ -149,6 +149,19 @@ Treat headers as credentials: they are visible to anyone who can edit the Cortex
 | One call to a plain REST API | HTTP tool — `cortex-http-tools` |
 | Several steps, or logic between them | Code tool — `cortex-code-tools` |
 | A system that already speaks MCP | MCP server on the node |
+| Booking an appointment | A calendar action on the node — see below |
+
+### Appointments
+
+Attaching a calendar action from Composio is how a Cortex books appointments today. Nothing special
+about it: pick the action, attach it to the node, and let the agent collect the date and time in
+conversation like any other data.
+
+Worth telling the user, though: **Atom also has appointment scheduling built in**, where the
+customer receives the WhatsApp scheduling form and submitting it creates the booking. It is
+experimental, still in development, and **cannot be configured through these tools** — it is set up
+by hand in the Atom UI, on the agent node under Tools → Herramientas de Atom. Mention it so they can
+choose; the Composio route is what you can actually wire up from here.
 
 ## When something looks wrong
 

@@ -170,6 +170,24 @@ takes effect immediately**. The tools say so when it applies — relay it *befor
 
 Publishing and deleting are deliberately not available here; they stay in the Atom UI.
 
+## Booking appointments
+
+There are two routes, and today they are not equivalent.
+
+**Atom's native appointment tool** sends the customer the WhatsApp scheduling form; submitting that
+form *is* the booking. It is **experimental and still in development**, and **these tools cannot
+configure it** — there is no schema for it and no way to switch it on from a `save_agent`. It is set
+up by hand in the Atom UI, on the agent node: Tools → Herramientas de Atom → Agendamiento de citas,
+picking a group and an appointment type.
+
+**Composio is how you build it from here**, and for now that is the normal answer: attach a calendar
+action (Google Calendar and friends) to the node and let the agent book. See `cortex-integrations`.
+
+Say both when someone asks. The difference that matters to them is that the Composio route books on
+a calendar without sending the WhatsApp form, so the customer never fills anything in — the agent
+collects the date and time in conversation instead. If they want the native form, that is the UI
+route, with the caveat that it is still moving.
+
 ## The workflow
 
 **1. Get the `companyId` from the human.** Never guess it. There is no lookup by name, on purpose.
@@ -286,6 +304,7 @@ concrete reason for a specific model.
 | Documents and catalogs | `cortex-rag` |
 | Buttons, lists, carousels, audio, forms | `cortex-response-formats` |
 | Testing and diagnosis | `cortex-simulation` |
+| Booking appointments | `cortex-integrations` — the native tool is UI-only |
 
 ## When something looks wrong
 
