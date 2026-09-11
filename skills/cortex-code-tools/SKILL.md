@@ -18,6 +18,16 @@ the connected integrations, and platform functions for writing to the client rec
 coordination between systems, the code tool is what you reach for. Do not push that complexity out
 to an external API just to keep the tool small — writing it here is the point.
 
+## First: can the integration already do it?
+
+Before writing anything, read the action's arguments. `search_composio_tools` lists them on every
+result for exactly this.
+
+A real one: asked to fix appointments landing an hour off, the answer proposed a code tool that
+would normalise time zones by hand before calling Google Calendar. `GOOGLECALENDAR_CREATE_EVENT`
+takes a `timezone` argument. The code tool would have been fifty lines to replace one parameter,
+and every one of those lines is something to maintain, test and debug when Google changes.
+
 ## Choosing between a code tool and an HTTP tool
 
 | The task | Use |

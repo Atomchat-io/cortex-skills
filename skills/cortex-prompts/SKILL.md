@@ -35,24 +35,84 @@ If it is only true while booking an appointment, it belongs in that node.
 
 ## Conversation Goal — what to achieve right now
 
-Per agent node. The objective of this step and the signal it is complete.
+Per agent node. It has **sections**, in this order, and most nodes need more than one. A goal that
+is only an objective is an unfinished goal.
+
+### 1. What is already known
+
+First, always: the fields this node can rely on, interpolated. The engine resolves them once when
+the conversation opens, so by the time the node runs they are either a value or empty.
 
 ```
-Averigua qué servicio necesita el cliente y si ya ha venido antes.
-Pregunta una cosa a la vez.
-Cuando tengas ambos datos, continúa.
+# Datos que ya tenés
+nombre: /{full_name}
+plan: /{plan_contratado}
+
+Si `nombre` viene vacío, preguntalo. Si trae valor, usalo y no lo preguntes.
 ```
 
-Short is correct. A good Conversation Goal is often three or four lines.
+This is the difference between an agent that greets a returning customer by name and one that asks
+a customer their name for the fourth time. **Writing "if they have not given their name, ask for
+it" is not the same thing** — that reasons about the transcript, which starts empty, so it always
+asks. The field is what knows.
 
-**Never restate identity, tone or business context.** It is already inherited, and duplicating it
-guarantees the two drift apart until they contradict each other — at which point the agent's
-behaviour depends on which one it weighted, and you cannot reason about it.
+Which fields exist comes from `list_catalog`; whether to read one rather than ask is a decision for
+the human — see *Ask before using a field interpolation* below.
 
-Two smells:
+### 2. The objective, and the signal it is complete
 
-- **"and then"** in a Conversation Goal usually means two nodes.
-- **A Conversation Goal longer than the System Instructions** means something is in the wrong place.
+```
+Averiguá qué servicio necesita y si ya vino antes.
+Preguntá una cosa a la vez.
+Cuando tengas ambos datos, continuá.
+```
+
+### 3. When to reach for each tool
+
+The tool's own description says what it does; the goal says **when, here, and what its answer
+means** — which is the most common gap in a Cortex that has tools and never uses them:
+
+```
+Consultá @[VerificarStock] antes de prometer disponibilidad.
+Si `disponible` es false, ofrecé las alternativas que devuelve.
+```
+
+### 4. When to use a response format
+
+A format that is enabled is not a format that gets used. Say the moment:
+
+```
+Cuando ofrezcas los horarios disponibles, mostralos como lista, no como texto.
+```
+
+### 5. When to leave this node
+
+Transferring and exiting are the same act — the conversation stops being this node's. Say the
+condition in the customer's terms, and nothing about the machinery:
+
+```
+Si se enoja, insiste en hablar con alguien, o pregunta algo fuera del taller,
+derivá a una persona.
+
+Si ya agendaste la cita, terminá.
+```
+
+**Not the transition's name, and not `@[...]`.** The label and the condition on the edge are what
+route this; naming them here is a second description of the same routing that drifts from the first.
+`@[ToolName]` is for the node's own tools, never for a way out.
+
+### On length
+
+Only what this node needs. A node that reads one field, has no tools and one way out is four lines
+and that is correct; a node that books an appointment against a calendar is longer, and shortening
+it would only move the missing part somewhere it cannot be read.
+
+**Never restate identity, tone or business context.** Those are inherited from the System
+Instructions, and duplicating them guarantees the two drift apart until they contradict each other
+— at which point the agent's behaviour depends on which one it weighted, and you cannot reason
+about it.
+
+The smell worth keeping: **"and then"** in a Conversation Goal usually means two nodes.
 
 ## The agent cannot see its own configuration
 
@@ -69,11 +129,25 @@ Each is configured elsewhere, and happens automatically:
 |---|---|
 | A field captured before moving on | Node info collection — `cortex-info-collection` |
 | Knowledge consulted | Retrieval, before the turn — `cortex-rag` |
-| A tool called | The tool's own description |
-| Moving to another node | The edge's condition — `cortex-graph-schema` |
+| A tool to exist | The tool's own description |
+| The condition for moving | The edge's condition — `cortex-graph-schema` |
 
 Writing these into a prompt is not merely useless — it spends the agent's attention on instructions
 it cannot follow, and makes the real prompt harder to follow.
+
+### What it *can* see, and can therefore be told about
+
+The line is what has a name the agent is given:
+
+| ✅ | ❌ | why |
+|---|---|---|
+| `consultá @[VerificarStock] antes de prometer` | `tenés una herramienta de stock` | `@[ToolName]` names a tool this node holds. A vague mention names nothing. |
+| ``si `nombre` viene vacío, preguntalo`` | `guardá el nombre en el campo nombre` | An interpolated value is in the text it reads. Capture happens outside the prompt. |
+| `si se enoja, derivá a una persona` | `transferí al agente de Facturación` / ``finalizá por `solicita_humano` `` | Say the situation. The edge's label and condition do the routing, and repeating them here gives the same decision two descriptions that drift. |
+
+So a Conversation Goal describing *when* to use a tool, *what is already known*, and *the situations
+that end this node's part* is talking about things the agent can act on. The same goal naming a
+node, a transition, a file or a field to write is describing machinery it cannot reach.
 
 ## Referencing a tool: `@[ToolName]`
 
@@ -137,8 +211,12 @@ collection store it.
 
 ### The context block
 
-When you do interpolate, **map every field once at the top of the System Instructions**, then refer
-to those names in natural language everywhere else:
+Map the fields once, under a heading, then refer to those names in natural language everywhere else.
+
+**Where it goes depends on who needs it.** A field every node relies on — the customer's name, their
+plan — belongs at the top of the System Instructions. A field only one node reads belongs in that
+node's Conversation Goal, as its first section, where whoever reads the node can see what it knows
+without opening the Cortex-level prompt.
 
 ```
 # Contexto

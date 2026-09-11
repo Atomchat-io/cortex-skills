@@ -176,12 +176,22 @@ Conversation Goal says what to do with it.**
 
 ```
 list_catalog(companyId, kind: "info_fields")     → real keywords
-update_agent(companyId, agentId, expectedUpdatedAt, nodes: [...])
+update_agent(companyId, agentId, expectedUpdatedAt,
+             operations: [{ op: "set_node_item", nodeId, collection: "infoCollection", item: {...} }])
 ```
 
 Info collection lives on the agent node as `infoCollection`, each entry carrying an `id`, `label`,
-`description` and `targetField`. The **description** is what the agent uses to recognise the value in
-what the customer says, so `El correo electrónico donde recibir la confirmación` beats `email`.
+`description` and `targetField`:
+
+- **`targetField`** — the `keyword` from `list_catalog`, and the part that has to be exactly right.
+  An invented one is accepted by the write and then collects nothing, with no error anywhere to find
+  it by.
+- **`label`** — the catalog's own `label` for that field, verbatim. Despite the name it is not a
+  title you compose: the builder renders it as an autocomplete over the catalog's field names and
+  outlines the row in red when it matches none, so writing `Nombre completo del titular` over a field
+  the catalog calls `Nombre` produces an invalid-looking row for a perfectly real keyword.
+- **`description`** — the one part that is yours. It is what the agent uses to recognise the value in
+  what the customer says, so `El correo electrónico donde recibir la confirmación` beats `email`.
 
 Passive fields live at the Cortex level as `saveFields`.
 

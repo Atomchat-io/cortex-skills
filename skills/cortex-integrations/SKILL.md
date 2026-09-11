@@ -53,13 +53,27 @@ list_connected_integrations(companyId, agentId)
     → what THIS Cortex can actually use. The one that matters before attaching anything.
 ```
 
-The search is **server-side and semantic**, not a substring filter, so describing the task works:
-`"create a calendar event"` finds `GOOGLECALENDAR_CREATE_EVENT` without you knowing the slug or even
-the product. This is usually the fastest route into an unfamiliar integration.
+### The query is keywords, not a description
+
+The index matches **words, not meaning**, and gets this wrong in two ways that both look like the
+action not existing:
+
+| query | result |
+|---|---|
+| `create event` | ✅ `GOOGLECALENDAR_CREATE_EVENT` |
+| `create a calendar event` | ✅ same |
+| `create a calendar event for an appointment` | ❌ nothing — five or more words matches nothing |
+| `schedule appointment` | ❌ nothing — the vendor calls it *create event* |
+
+So: **two to four English words, naming the operation the vendor would name** — create, update,
+list, delete, send, search — plus its object. Not the job you are doing, and not Spanish.
+
+An empty result means the query was wrong far more often than it means the integration cannot do
+it. Try fewer words, and the vendor's own verb, before telling anyone it is not supported.
 
 A working sequence:
 
-1. `search_composio_tools` with a plain description of the task — no toolkit
+1. `search_composio_tools` with two to four keywords — no toolkit
 2. Note the `toolkitSlug` on the result you want
 3. `list_connected_integrations` — is that toolkit connected for *this* Cortex?
 4. If not, ask the human to connect it in the UI, then re-check

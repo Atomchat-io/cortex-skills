@@ -71,25 +71,47 @@ tell the human; do not create new ones.
 can therefore reparent the tree — changing every implicit back- and sibling-transition — without any
 node changing at all.
 
-This is why `update_agent` takes **operations**, not an array:
+This is the main reason `update_agent` takes **operations** rather than arrays.
+
+## The operations
+
+One batch, applied in order, all or nothing. Anything you do not name is left exactly as it was.
+
+| operation | |
+|---|---|
+| `update_node` | `nodeId` + the fields to merge. Collections are not settable here. |
+| `set_node_item` | upsert one entry of `tools`, `httpTools`, `codeTools`, `mcpTools`, `infoCollection` or `knowledgeBases`, by its `id` |
+| `remove_node_item` | drop one entry by `id` |
+| `add_agent_node` | `parentId` + label, goal and condition. **Writes the transition for you.** |
+| `add_end_node` | same, for an Exit Port |
+| `add_transition` | a cross-tree or back edge between nodes that already exist |
+| `update_transition` | merge into an edge's `data` |
+| `reparent_node` | move a node under a different parent |
+| `delete_node` · `delete_transition` | by id |
 
 ```json
 {
-  "edgeOperations": [
-    { "op": "add", "edge": {
-        "id": "calificar-cierre", "source": "calificar", "target": "cierre",
-        "data": { "label": "listo", "conditionExpression": "El cliente confirmó que quiere avanzar." } } },
-    { "op": "update", "edgeId": "recepcion-info",
+  "operations": [
+    { "op": "add_agent_node", "nodeId": "cierre", "parentId": "calificar",
+      "label": "Cierre", "conversationGoal": "Cerrar la venta.",
+      "condition": "El cliente confirmó que quiere avanzar." },
+    { "op": "update_transition", "edgeId": "recepcion-info",
       "data": { "conditionExpression": "El cliente pregunta por precios u horarios." } },
-    { "op": "remove", "edgeId": "info-agendar" }
+    { "op": "delete_transition", "edgeId": "info-agendar" }
   ]
 }
 ```
 
-Applied in order against the stored array. `add` appends, so existing parenthood survives by
-construction. There is no way to submit a replacement array — deliberately.
+Two things follow from edge order being parenthood. **`add_agent_node` writes the parent transition
+itself** — you never position it, so parenthood is right by construction. And every operation
+appends or edits in place; nothing reorders, so no edit can silently reparent the tree.
 
-Nodes **are** written as a full array; their order carries no meaning.
+You choose the `nodeId` for a node you create, which is what lets a later operation in the same
+batch reference it.
+
+Nodes can still be written as a full array through `nodes`, and their order carries no meaning —
+but that path re-sends every prompt and every code tool body to change one field. Use it only to
+rewrite a Cortex wholesale.
 
 ## Writing routing conditions
 

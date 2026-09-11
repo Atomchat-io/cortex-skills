@@ -231,15 +231,30 @@ It applies to every reference you write:
 If a catalog has no entry for what you need, say so and stop. Do not approximate, and do not reuse a
 similar-looking value from another company.
 
-**5. Write.**
+**5. Write.** Create takes the whole graph; editing takes **operations**.
+
 ```
 create_agent(companyId, name, baseSystemPrompt, nodes, edges)
-update_agent(companyId, agentId, expectedUpdatedAt, set?, nodes?, edgeOperations?)
+update_agent(companyId, agentId, expectedUpdatedAt, set?, operations?, nodes?)
 ```
+
+**Start with the System Instructions.** `set` carries the Cortex-level fields — `baseSystemPrompt`,
+`saveFields`, `stagesVenta`, `typifications`, `tags`, `timezone`, `name` — and only the keys you give
+are touched. A Cortex without System Instructions is a set of nodes with no one behind them, and
+every node then repeats what should have been said once.
+
+`operations` carries everything inside the graph, applied in order as **one atomic batch**: if any
+operation is invalid, none of them land and the result names which and why. A whole change goes in
+one call — a node, the transition that reaches it, and its way out are only valid together.
+
+Reach for operations rather than `nodes` even for a one-word change. Replacing the node array means
+re-emitting every prompt, every code tool's source and every HTTP tool's credentials — and each pass
+through is a chance to mangle something nobody asked you to touch. `nodes` still exists, for
+rewriting a Cortex wholesale.
+
 `expectedUpdatedAt` guards against overwriting someone editing in the browser; if it is rejected,
 re-read and re-apply rather than forcing. Node `position` is ignored — the builder lays the canvas
-out itself. Edges are edited through **operations**, not by replacing the array, because edge order
-determines the node tree. See `cortex-graph-schema`.
+out itself. See `cortex-graph-schema` for the operation list.
 
 **6. Check.**
 ```
